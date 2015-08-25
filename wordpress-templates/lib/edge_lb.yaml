@@ -43,6 +43,9 @@ resources:
       port_id: { get_attr: [lb_pool, vip, port_id] }
 
 outputs:
+  pool_id:
+    description: Pool ID required for deferred adding of members.
+    value: { get_resource: lb_pool }
   server_ip:
     description: IP Address of the load-balanced server.
     value: { get_attr: [lb_floating, floating_ip_address] }

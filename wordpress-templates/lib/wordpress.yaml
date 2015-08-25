@@ -40,15 +40,14 @@ parameters:
     label: Database password
     hidden: true
     description: Password to access the database.
-  num_instances:
-    type: number
-    label: Number of wordpress instances
-    description: Create a LB pool of wordpress instances
-    default: 1
   pool_id:
     type: string
     label: UUID of LB pool
     description: Parent template must pass the name of LB pool
+  security_group:
+    type: string
+    label: Wordpress instance(s) security group
+    description: Apply same security group to each Wordpress instance
 
 
 resources:
@@ -56,20 +55,18 @@ resources:
   port:
     type: OS::Neutron::Port
     properties:
-      name: wp_port_%index%
       network_id: { get_param: wordpress_network_id }
       security_groups:
-        - { get_resource: security_group }
+        - { get_param: security_group }
 
   wordpress:
     type: OS::Nova::Server
     properties:
-      name: wordpress_%index%
       image: { get_param: image }
       flavor: { get_param: flavor }
       key_name: { get_param: key }
       networks:
-        - port: { get_resource: wp_port_%index% }
+        - port: { get_resource: port }
       user_data_format: RAW
       user_data:
         str_replace:
@@ -106,17 +103,11 @@ resources:
             chown -R www-data:www-data /var/www/html/
             chmod -R g+w /var/www/html/
 
-    member:
-      type: OS::Neutron::PoolMember
-      properties:
-        pool_id: {get_param: pool_id}
-        address: {get_attr: [wordpress_%index%, first_address]}
-        protocol_port: 80
+  member:
+    type: OS::Neutron::PoolMember
+    properties:
+      pool_id: {get_param: pool_id}
+      address: {get_attr: [wordpress, first_address]}
+      protocol_port: 80
 
 outputs:
-  ip:
-    description: The IP address of the wordpress instance.
-    value: { get_attr: [wordpress_instance, first_address] }
-  port:
-    description: The network port of the wordpress instance.
-    value: { get_resource: port }
