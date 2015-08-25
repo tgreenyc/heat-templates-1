@@ -23,12 +23,12 @@ resources:
   lb_pool:
     type: OS::Neutron::Pool
     properties:
-    lb_method: ROUND_ROBIN
-    protocol: HTTP
-    monitors: [ { get_resource: monitor } ]
-    subnet_id: { get_param: lb_subnet }
-    vip:
-      protocol_port: 80
+      lb_method: ROUND_ROBIN
+      protocol: HTTP
+      monitors: [ { get_resource: monitor } ]
+      subnet_id: { get_param: lb_subnet }
+      vip:
+        protocol_port: 80
 
   lb:
     type: OS::Neutron::LoadBalancer
@@ -38,15 +38,11 @@ resources:
 
   lb_floating:
     type: OS::Neutron::FloatingIP
-      properties:
-        floating_network_id: { get_param: external_network_id }
-        port_id: { get_attr: [ pool, vip, port_id ] }
+    properties:
+      floating_network_id: { get_param: external_network_id }
+      port_id: { get_attr: [lb_pool, vip, port_id] }
 
 outputs:
   server_ip:
     description: IP Address of the load-balanced server.
-    value: { get_attr: [server, first_address] }
-  lb_member:
-    description: LB member details.
-    value: { get_attr: [member, show] }
-
+    value: { get_attr: [lb_floating, floating_ip_address] }
