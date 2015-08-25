@@ -1,4 +1,4 @@
-heat_template_version: 2013-05-23
+heat_template_version: 2015-04-30
 
 description: Template that installs a wordpress server.
 
@@ -40,47 +40,36 @@ parameters:
     label: Database password
     hidden: true
     description: Password to access the database.
-  volume_count:
+  num_instances:
     type: number
-    label: Number of volumes
-    description: Number of volumes to attach to server
-    default: 0
-    constraints:
-      - range: {min: 0, max: 10}
-  volume_size:
-    type: number
-    description: Size of volume to attach to server
+    label: Number of wordpress instances
+    description: Create a LB pool of wordpress instances
     default: 1
+  pool_id:
+    type: string
+    label: UUID of LB pool
+    description: Parent template must pass the name of LB pool
+
 
 resources:
-  security_group:
-      type: OS::Neutron::SecurityGroup
-      properties:
-        name: wordpress_security_group
-        rules:
-          - protocol: tcp
-            port_range_min: 80
-            port_range_max: 80
-          - protocol: tcp
-            port_range_min: 22
-            port_range_max: 22
 
   port:
     type: OS::Neutron::Port
     properties:
+      name: wp_port_%index%
       network_id: { get_param: wordpress_network_id }
       security_groups:
         - { get_resource: security_group }
 
-  wordpress_instance:
+  wordpress:
     type: OS::Nova::Server
     properties:
-      name: wordpress
+      name: wordpress_%index%
       image: { get_param: image }
       flavor: { get_param: flavor }
       key_name: { get_param: key }
       networks:
-        - port: { get_resource: port }
+        - port: { get_resource: wp_port_%index% }
       user_data_format: RAW
       user_data:
         str_replace:
@@ -100,8 +89,6 @@ resources:
             apt-get update
             apt-get -y install apache2 php5 libapache2-mod-php5 php5-mysql php5-gd mysql-client
 
-            # download wordpress
-            wget http://wordpress.org/latest.tar.gz
             tar -xzf latest.tar.gz
 
             # configure wordpress
@@ -119,15 +106,12 @@ resources:
             chown -R www-data:www-data /var/www/html/
             chmod -R g+w /var/www/html/
 
-  wordpress_volumes:
-    type: OS::Heat::ResourceGroup
-    properties:
-      count: {get_param: volume_count}
-      resource_def:
-        type: volume_with_attachment.yaml
-        properties:
-          instance_id: {get_resource: wordpress_instance}
-          volume_size: {get_param: volume_size}
+    member:
+      type: OS::Neutron::PoolMember
+      properties:
+        pool_id: {get_param: pool_id}
+        address: {get_attr: [wordpress_%index%, first_address]}
+        protocol_port: 80
 
 outputs:
   ip:

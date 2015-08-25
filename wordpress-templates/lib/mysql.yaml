@@ -1,4 +1,4 @@
-heat_template_version: 2013-05-23
+heat_template_version: 2015-04-30
  
 description: Template that installs a MySQL server with a database.
  
@@ -74,6 +74,16 @@ resources:
       network_id: { get_param: db_network_id }
       security_groups:
         - { get_resource: security_group }
+
+  wait_handle:
+    type: OS::Heat::WaitConditionHandle
+
+  wait_condition:
+    type: OS::Heat::WaitCondition
+    properties:
+      handle: { get_resource: wait_handle }
+      count: 1
+      timeout: 600
       
   mysql_instance:
     type: OS::Nova::Server
@@ -92,6 +102,7 @@ resources:
             __database_name__: { get_param: database_name }
             __database_user__: { get_param: database_user }
             __database_password__: password
+            __wc_notify__: { get_attr: ['wait_handle', 'curl_cli'] }
           template: |
             #!/bin/bash
 
@@ -124,6 +135,8 @@ resources:
             GRANT ALL PRIVILEGES ON __database_name__.* TO '__database_user__'@'%' IDENTIFIED BY '__database_password__';
             FLUSH PRIVILEGES;
             EOF
+
+            __wc_notify__ --data-binary '{"status": "SUCCESS"}'
  
   mysql_volumes:
     type: OS::Heat::ResourceGroup

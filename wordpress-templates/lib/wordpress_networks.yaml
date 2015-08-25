@@ -1,4 +1,4 @@
-heat_template_version: 2013-05-23
+heat_template_version: 2015-04-30
 
 description: Template that creates a private network.
 
@@ -22,7 +22,7 @@ parameters:
     type: comma_delimited_list
     label: DNS nameservers
     description: Comma separated list of DNS nameservers for the private network.
-    default: '8.8.8.8'
+    default: '192.168.110.10'
 
 resources:
   db_network:
@@ -55,6 +55,7 @@ resources:
     type: OS::Neutron::Router
     properties:
       name: wordpress_router
+      value_specs: {router_type: exclusive}
       external_gateway_info:
         network: { get_param: public_network }
 
@@ -70,6 +71,18 @@ resources:
       router_id: { get_resource: router }
       subnet_id: { get_resource: wordpress_subnet }
 
+  security_group:
+      type: OS::Neutron::SecurityGroup
+      properties:
+        name: wordpress_security_group
+        rules:
+          - protocol: tcp
+            port_range_min: 80
+            port_range_max: 80
+          - protocol: tcp
+            port_range_min: 22
+            port_range_max: 22
+
 outputs:
   db_net_id:
     description: The database network id.
@@ -77,3 +90,6 @@ outputs:
   wordpress_net_id:
     description: The wordpress network id.
     value: { get_resource: wordpress_network }
+  wordpress_secgrp:
+    description: Security group to be used when creating WP ports.
+    value: { get_resource: security_group }

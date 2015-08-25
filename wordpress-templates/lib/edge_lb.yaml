@@ -1,0 +1,52 @@
+heat_template_version: 2015-04-30
+
+description: A load-balancer server
+parameters:
+  lb_subnet:
+    type: string
+    description: Server user_data
+    default: 4280c434-1d58-4d3d-96c9-d69b6d0e11d8
+  external_network_id:
+    type: string
+    description: External network for VIP
+    default: c7b5445a-2e31-465e-9ec3-711aa701de76
+
+resources:
+  monitor:
+    type: OS::Neutron::HealthMonitor
+    properties:
+      type: HTTP
+      delay: 10
+      max_retries: 5
+      timeout: 10
+
+  lb_pool:
+    type: OS::Neutron::Pool
+    properties:
+    lb_method: ROUND_ROBIN
+    protocol: HTTP
+    monitors: [ { get_resource: monitor } ]
+    subnet_id: { get_param: lb_subnet }
+    vip:
+      protocol_port: 80
+
+  lb:
+    type: OS::Neutron::LoadBalancer
+    properties:
+      protocol_port: 80
+      pool_id: { get_resource: lb_pool }
+
+  lb_floating:
+    type: OS::Neutron::FloatingIP
+      properties:
+        floating_network_id: { get_param: external_network_id }
+        port_id: { get_attr: [ pool, vip, port_id ] }
+
+outputs:
+  server_ip:
+    description: IP Address of the load-balanced server.
+    value: { get_attr: [server, first_address] }
+  lb_member:
+    description: LB member details.
+    value: { get_attr: [member, show] }
+

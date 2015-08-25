@@ -1,4 +1,4 @@
-heat_template_version: 2013-05-23
+heat_template_version: 2015-04-30
 
 description: Template that installs a wordpress server and supporting MySQL database running on separate servers
 
@@ -9,7 +9,7 @@ parameters:
     type: string
     label: Image name or ID
     description: Image to be used for server. Please use an Ubuntu based image.
-    default: ubuntu-14.04-server-amd64
+    default: ubuntu-cloud-14.04
   flavor:
     type: string
     label: Flavor
@@ -24,18 +24,7 @@ parameters:
     type: string
     label: Public network ID
     description: Public network to attach server to.
-    default: public
-  volume_count:
-    type: number
-    label: Number of volumes
-    description: Number of volumes to attach to server
-    default: 0
-    constraints:
-      - range: {min: 0, max: 10}
-  volume_size:
-    type: number
-    description: Size of volume to attach to server
-    default: 1
+    default: c7b5445a-2e31-465e-9ec3-711aa701de76
 
 resources:
   network:
@@ -43,11 +32,16 @@ resources:
     properties:
       public_network: { get_param: public_network_id }
 
+  the_lb:
+    depends_on: network
+    type: lib/edge_lb.yaml
+    properties:
+      lb_subnet: { get_attr: [network, wordpress_net_id] }
+
   mysql:
     type: lib/mysql.yaml
+    depends_on: the_lb
     properties:
-      volume_count: { get_param: volume_count }
-      volume_size: { get_param: volume_size }
       image: { get_param: image }
       flavor: { get_param: flavor }
       key: { get_param: key }
@@ -55,11 +49,11 @@ resources:
       database_name: wordpress
       database_user: wordpress_user
 
-  wordpress:
+  wordpress_instances:
+    type: OS::Heat::ResourceGroup
     type: lib/wordpress.yaml
+    depends_on: mysql
     properties:
-      volume_count: { get_param: volume_count }
-      volume_size: { get_param: volume_size }
       image: { get_param: image }
       flavor: { get_param: flavor }
       key: { get_param: key }
@@ -68,6 +62,7 @@ resources:
       database_name: wordpress
       database_user: wordpress_user
       database_password: { get_attr: [mysql, database_password] }
+      security_group: { get_attr: [wordpress_networks, wordpress_segrp] }
 
   floating_ip:
     type: lib/floating_ip.yaml
@@ -79,4 +74,4 @@ resources:
 outputs:
   ip:
     description: The public IP address to access Wordpress.
-    value: { get_attr: [floating_ip, ip] }
+    value: { get_attr: [floating_ip, resource.floating_ip, floating_ip_address] }
