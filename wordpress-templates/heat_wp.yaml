@@ -41,7 +41,7 @@ resources:
     depends_on: network
     type: lib/edge_lb.yaml
     properties:
-      lb_subnet: { get_attr: [network, wordpress_net_id] }
+      lb_subnet: { get_attr: [network, wordpress_subnet_id] }
 
   mysql:
     type: lib/mysql.yaml
@@ -65,12 +65,13 @@ resources:
           image: { get_param: image }
           flavor: { get_param: flavor }
           key: { get_param: key }
-          wordpress_network_id: { get_attr: [network, wordpress_net_id] }
+          wordpress_network_id: { get_attr: [network, wordpress_network_id] }
+          wordpress_subnet_id: { get_attr: [network, wordpress_subnet_id] }
           mysql_server: { get_attr: [mysql, ip] }
           database_name: wordpress
           database_user: wordpress_user
           database_password: { get_attr: [mysql, database_password] }
-          security_group: { get_attr: [network, wordpress_segrp] }
+          security_group: { get_attr: [network, wordpress_secgrp] }
           pool_id: { get_attr: [the_lb, pool_id] }
 
 outputs:

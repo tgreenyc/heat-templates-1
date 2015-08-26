@@ -23,6 +23,10 @@ parameters:
     label: Private wordpress network ID
     description: Network to attach server to.
     default: private
+  wordpress_subnet_id:
+    type: string
+    label: Private wordpress subnet ID
+    description: Subnet to use.
   mysql_server:
     type: string
     label: MySQL database server IP address

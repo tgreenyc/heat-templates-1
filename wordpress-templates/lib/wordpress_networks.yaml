@@ -87,9 +87,12 @@ outputs:
   db_net_id:
     description: The database network id.
     value: { get_resource: db_network }
-  wordpress_net_id:
+  wordpress_network_id:
     description: The wordpress network id.
     value: { get_resource: wordpress_network }
+  wordpress_subnet_id:
+    description: The wordpress subnet id.
+    value: { get_resource: wordpress_subnet }
   wordpress_secgrp:
     description: Security group to be used when creating WP ports.
     value: { get_resource: security_group }
