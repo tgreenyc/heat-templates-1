@@ -75,13 +75,13 @@ resources:
       security_groups:
         - { get_resource: security_group }
 
-  wait_handle:
+  mysql_wait_handle:
     type: OS::Heat::WaitConditionHandle
 
-  wait_condition:
+  mysql_wait_condition:
     type: OS::Heat::WaitCondition
     properties:
-      handle: { get_resource: wait_handle }
+      handle: { get_resource: mysql_wait_handle }
       count: 1
       timeout: 600
       
@@ -102,7 +102,7 @@ resources:
             __database_name__: { get_param: database_name }
             __database_user__: { get_param: database_user }
             __database_password__: password
-            __wc_notify__: { get_attr: ['wait_handle', 'curl_cli'] }
+            __wc_notify__: { get_attr: ['mysql_wait_handle', 'curl_cli'] }
           template: |
             #!/bin/bash
 

@@ -52,6 +52,10 @@ parameters:
     type: string
     label: Wordpress instance(s) security group
     description: Apply same security group to each Wordpress instance
+  curl_url:
+    type: string
+    label: URL to notify handler 
+    description:  Notify heat that post-provisioning activity is complete.
 
 
 resources:
@@ -79,6 +83,7 @@ resources:
             __database_name__: { get_param: database_name }
             __database_user__: { get_param: database_user }
             __database_password__: password
+            __wc_notify__: { get_param: curl_url }
           template: |
             #!/bin/bash -ex
             
@@ -108,6 +113,8 @@ resources:
             # give apache ownership of the application files
             chown -R www-data:www-data /var/www/html/
             chmod -R g+w /var/www/html/
+
+            __wc_notify__ --data-binary '{"status": "SUCCESS"}'
 
   member:
     type: OS::Neutron::PoolMember

@@ -54,6 +54,16 @@ resources:
       database_name: wordpress
       database_user: wordpress_user
 
+  wp_wait_handle:
+    type: OS::Heat::WaitConditionHandle
+
+  wp_wait_condition:
+    type: OS::Heat::WaitCondition
+    properties:
+      handle: { get_resource: wp_wait_handle }
+      count: { get_param: num_instances } 
+      timeout: 900
+
   wordpress_instances:
     type: OS::Heat::ResourceGroup
     depends_on: mysql
@@ -73,6 +83,7 @@ resources:
           database_password: { get_attr: [mysql, database_password] }
           security_group: { get_attr: [network, wordpress_secgrp] }
           pool_id: { get_attr: [the_lb, pool_id] }
+          curl_url: { get_attr: ['wp_wait_handle', 'curl_cli'] }
 
 outputs:
   ip:
