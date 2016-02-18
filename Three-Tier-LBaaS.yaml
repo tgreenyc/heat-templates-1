@@ -82,6 +82,8 @@ resources:
     properties:
       admin_state_up: true
       name: heat-router-01
+      value_specs:
+          {"router_type":"exclusive"}
   heat_router_01_gw:
     type: OS::Neutron::RouterGateway
     properties:
