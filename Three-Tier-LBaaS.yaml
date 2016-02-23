@@ -252,8 +252,11 @@ resources:
 
   pool:
     type: OS::Neutron::Pool
+    #change dependency to be the router interface on the web subnet
+    #NSX router configuration may not complete by the time the pool is created
+    #Also resolves stack deletion dependencies.
     depends_on:
-      - web_subnet_01
+      - heat_router_int0
     properties:
       protocol: HTTP
       monitors:
