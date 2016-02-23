@@ -82,6 +82,8 @@ resources:
     properties:
       admin_state_up: true
       name: heat-router-01
+      value_specs:
+          {"router_type":"exclusive"}
   heat_router_01_gw:
     type: OS::Neutron::RouterGateway
     properties:
@@ -250,8 +252,11 @@ resources:
 
   pool:
     type: OS::Neutron::Pool
+    #change dependency to be the router interface on the web subnet
+    #NSX router configuration may not complete by the time the pool is created
+    #Also resolves stack deletion dependencies.
     depends_on:
-      - web_subnet_01
+      - heat_router_int0
     properties:
       protocol: HTTP
       monitors:
